@@ -1,0 +1,8 @@
+Django>=5.1
+djangorestframework
+python-dotenv
+cryptography
+PyJWT
+requests
+django-cors-headers
+gunicorn

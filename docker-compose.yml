@@ -3,10 +3,20 @@ version: "3.9"
 services:
   sso-proxy:
     build: .
-    ports:
-      - "8000:8000"
     env_file:
       - .env
     volumes:
       - .:/app
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.janaadamdar.rule=Host(`auth.odx.kz`)"
+      - "traefik.http.routers.janaadamdar.entrypoints=websecure"
+      - "traefik.http.routers.janaadamdar.tls.certresolver=myresolver"
+      - "traefik.http.services.janaadamdar.loadbalancer.server.port=8000"
+    networks:
+      - traefik_traefik-net
+
+networks:
+  traefik_traefik-net:
+    external: true

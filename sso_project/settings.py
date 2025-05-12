@@ -9,6 +9,7 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".odx.kz"]
 
 INSTALLED_APPS = [
     'django.contrib.staticfiles',
+    'django.contrib.contenttypes',
     'corsheaders',
     "rest_framework",
     "authprovider",

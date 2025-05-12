@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.janaadamdar.rule=Host(`auth.odx.kz`)"
+      - "traefik.http.routers.janaadamdar.rule=Host(`sso-entry.odx.kz`)"
       - "traefik.http.routers.janaadamdar.entrypoints=websecure"
       - "traefik.http.routers.janaadamdar.tls.certresolver=myresolver"
       - "traefik.http.services.janaadamdar.loadbalancer.server.port=8000"

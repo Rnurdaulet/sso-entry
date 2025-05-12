@@ -35,9 +35,6 @@ class ECPLoginView(APIView):
 
 class PasswordLoginView(APIView):
     def post(self, request):
-        if not is_valid_client(request):
-            return Response({"error": "invalid_client"}, status=status.HTTP_401_UNAUTHORIZED)
-
         username = request.data.get("username")
         password = request.data.get("password")
         client_id = request.data.get("client_id")

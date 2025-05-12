@@ -54,13 +54,10 @@ def authorize(request):
     redirect_params = urlencode({"code": code, "state": state})
     return HttpResponseRedirect(f"{redirect_uri}?{redirect_params}")
 
-@csrf_exempt
+
 def token(request):
     client_id = request.POST.get("client_id")
     client_secret = request.POST.get("client_secret")
-
-    if not is_valid_client(client_id, client_secret):
-        return JsonResponse({"error": "invalid_client"}, status=401)
 
     if request.POST.get("grant_type") == "authorization_code":
         code = request.POST.get("code")

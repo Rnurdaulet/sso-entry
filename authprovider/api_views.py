@@ -6,41 +6,52 @@ from django.conf import settings
 from .nca import verify_ecp_signature
 from .keycloak import create_or_get_user, sign_id_token, is_valid_client
 
+from django.http import HttpResponseRedirect
+from urllib.parse import urlencode
+import secrets
+from datetime import datetime, timedelta
+from .auth_code_store import save_auth_code
 
 class ECPLoginView(APIView):
     def post(self, request):
-        if not is_valid_client(request):
-            return Response({"error": "invalid_client"}, status=status.HTTP_401_UNAUTHORIZED)
-
         signed_data = request.data.get("signed_data")
         nonce = request.data.get("nonce")
         client_id = request.data.get("client_id")
+        redirect_uri = request.data.get("redirect_uri")
+        state = request.data.get("state")
 
-        if not signed_data or not nonce:
-            return Response({"error": "missing_parameters"}, status=status.HTTP_400_BAD_REQUEST)
+        if not all([signed_data, nonce, client_id, redirect_uri, state]):
+            return Response({"error": "missing_parameters"}, status=400)
 
         try:
             iin, name = verify_ecp_signature(signed_data, nonce)
             create_or_get_user(iin, name)
-            id_token = sign_id_token(iin, name, aud=client_id)
-            return Response({
-                "access_token": f"access-token-{iin}",
-                "id_token": id_token,
-                "token_type": "Bearer",
-                "expires_in": 3600
-            })
-        except Exception as e:
-            return Response({"error": "invalid_signature", "error_description": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+            code = f"code-{secrets.token_urlsafe(24)}"
+            save_auth_code(code, {
+                "sub": iin,
+                "name": name,
+                "client_id": client_id,
+                "exp": datetime.utcnow() + timedelta(minutes=5)
+            })
+
+            params = urlencode({"code": code, "state": state})
+            return HttpResponseRedirect(f"{redirect_uri}?{params}")
+        except Exception as e:
+            return Response({"error": "invalid_signature", "detail": str(e)}, status=400)
 
 class PasswordLoginView(APIView):
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
         client_id = request.data.get("client_id")
+        redirect_uri = request.data.get("redirect_uri")
+        state = request.data.get("state")
+
+        if not all([username, password, client_id, redirect_uri, state]):
+            return Response({"error": "missing_parameters"}, status=400)
 
         token_url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token"
-        resp = None
 
         try:
             resp = requests.post(token_url, data={
@@ -51,19 +62,23 @@ class PasswordLoginView(APIView):
                 "password": password
             })
             resp.raise_for_status()
-            return Response(resp.json(), status=200)
+            userinfo = resp.json()
+
+            code = f"code-{secrets.token_urlsafe(24)}"
+            save_auth_code(code, {
+                "sub": username,
+                "name": username,
+                "client_id": client_id,
+                "exp": datetime.utcnow() + timedelta(minutes=5)
+            })
+
+            params = urlencode({"code": code, "state": state})
+            return HttpResponseRedirect(f"{redirect_uri}?{params}")
 
         except requests.HTTPError as e:
-            if resp is not None:
-                try:
-                    return Response(resp.json(), status=resp.status_code)
-                except Exception:
-                    return Response({"error": "http_error", "detail": str(e)}, status=resp.status_code)
-            return Response({"error": "http_error", "detail": str(e)}, status=500)
-
+            return Response({"error": "invalid_credentials", "detail": str(e)}, status=403)
         except Exception as e:
             return Response({"error": "server_error", "detail": str(e)}, status=500)
-
 
 class ChangePasswordView(APIView):
     def post(self, request):

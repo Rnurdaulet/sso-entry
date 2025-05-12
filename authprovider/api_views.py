@@ -43,6 +43,7 @@ class PasswordLoginView(APIView):
         client_id = request.data.get("client_id")
 
         token_url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token"
+        resp = None
 
         try:
             resp = requests.post(token_url, data={
@@ -54,8 +55,15 @@ class PasswordLoginView(APIView):
             })
             resp.raise_for_status()
             return Response(resp.json(), status=200)
+
         except requests.HTTPError as e:
-            return Response(resp.json(), status=resp.status_code)
+            if resp is not None:
+                try:
+                    return Response(resp.json(), status=resp.status_code)
+                except Exception:
+                    return Response({"error": "http_error", "detail": str(e)}, status=resp.status_code)
+            return Response({"error": "http_error", "detail": str(e)}, status=500)
+
         except Exception as e:
             return Response({"error": "server_error", "detail": str(e)}, status=500)
 

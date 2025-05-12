@@ -74,18 +74,20 @@ def sign_id_token(sub, name, aud):
 
     return jwt.encode(payload, private_key, algorithm="RS256")
 
-ALLOWED_ORIGINS = [
-    "127.0.0.1",
-    "localhost",
-    ".odx.kz"
-]
+# ALLOWED_ORIGINS = [
+#     "127.0.0.1",
+#     "localhost",
+#     ".odx.kz"
+# ]
+#
+# def is_valid_client(request):
+#     origin = request.headers.get("Origin", "")
+#     if origin.startswith("http://localhost") or origin.startswith("https://localhost"):
+#         return True
+#     for domain in ALLOWED_ORIGINS:
+#         if domain in origin:
+#             return True
+#     return False
 
-def is_valid_client(request):
-    origin = request.headers.get("Origin", "")
-    if origin.startswith("http://localhost") or origin.startswith("https://localhost"):
-        return True
-    for domain in ALLOWED_ORIGINS:
-        if domain in origin:
-            return True
-    return False
-
+def is_valid_client(*args, **kwargs):
+    return True

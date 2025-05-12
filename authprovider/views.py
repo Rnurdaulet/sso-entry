@@ -30,38 +30,21 @@ def well_known(request):
         "id_token_signing_alg_values_supported": ["RS256"]
     })
 
-def authorize(request):
-    log("Запрос на /authorize", request.GET.dict())
+from django.shortcuts import redirect
 
+def authorize(request):
     client_id = request.GET.get("client_id")
     redirect_uri = request.GET.get("redirect_uri")
     state = request.GET.get("state")
-    signed_data = request.GET.get("signed_data")
     nonce = request.GET.get("nonce")
 
-    if not all([client_id, redirect_uri, state, signed_data, nonce]):
-        log("Ошибка: отсутствуют обязательные параметры")
+    if not all([client_id, redirect_uri, state, nonce]):
         return HttpResponseBadRequest("Missing required parameters")
 
-    try:
-        iin, name = verify_ecp_signature(signed_data, nonce)
-        log("Успешная проверка ЭЦП", {"iin": iin, "name": name})
-        create_or_get_user(iin, name)
-    except Exception as e:
-        log("Ошибка подписи", {"exception": str(e)})
-        return JsonResponse({"error": "invalid_signature", "error_description": str(e)}, status=400)
+    # Формируем редирект на фронт
+    spa_url = f"https://sso.odx.kz/?{urlencode(request.GET)}"
+    return redirect(spa_url)
 
-    code = f"code-{secrets.token_urlsafe(24)}"
-    save_auth_code(code, {
-        "sub": iin,
-        "name": name,
-        "client_id": client_id,
-        "exp": datetime.utcnow() + timedelta(minutes=5)
-    })
-
-    log("Генерация кода авторизации", {"code": code, "redirect_uri": redirect_uri})
-    redirect_params = urlencode({"code": code, "state": state})
-    return HttpResponseRedirect(f"{redirect_uri}?{redirect_params}")
 
 @csrf_exempt
 def token(request):

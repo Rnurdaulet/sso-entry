@@ -11,6 +11,8 @@ from cryptography.hazmat.backends import default_backend
 from datetime import datetime, timedelta
 import secrets
 
+from .auth_code_store import save_auth_code, get_auth_code
+
 AUTH_CODE_STORE = {}
 
 def well_known(request):
@@ -42,12 +44,12 @@ def authorize(request):
         return JsonResponse({"error": "invalid_signature", "error_description": str(e)}, status=400)
 
     code = f"code-{secrets.token_urlsafe(24)}"
-    AUTH_CODE_STORE[code] = {
+    save_auth_code(code, {
         "sub": iin,
         "name": name,
         "client_id": client_id,
         "exp": datetime.utcnow() + timedelta(minutes=5)
-    }
+    })
 
     redirect_params = urlencode({"code": code, "state": state})
     return HttpResponseRedirect(f"{redirect_uri}?{redirect_params}")
@@ -62,7 +64,7 @@ def token(request):
 
     if request.POST.get("grant_type") == "authorization_code":
         code = request.POST.get("code")
-        user = AUTH_CODE_STORE.pop(code, None)
+        user = get_auth_code(code)
         if not user or user["exp"] < datetime.utcnow():
             return JsonResponse({"error": "invalid_grant"}, status=400)
 

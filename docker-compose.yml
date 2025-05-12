@@ -17,6 +17,13 @@ services:
     networks:
       - traefik_traefik-net
 
+  redis:
+    image: redis:7-alpine
+    container_name: sso-redis
+    restart: always
+    networks:
+      - traefik_traefik-net
+
 networks:
   traefik_traefik-net:
     external: true

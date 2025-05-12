@@ -6,3 +6,5 @@ PyJWT
 requests
 django-cors-headers
 gunicorn
+django-redis
+redis

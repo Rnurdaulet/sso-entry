@@ -52,26 +52,33 @@ def token(request):
 
     client_id = request.POST.get("client_id")
     client_secret = request.POST.get("client_secret")
+    print("[SSO-PROXY] client_id = ", client_id)
+    print("[SSO-PROXY] client_secret = ", client_secret)
 
     if not is_valid_client(client_id, client_secret):
         log("Неверный клиент", {"client_id": client_id})
+        print("[SSO-PROXY] Неверный клиент = ", client_id)
         return JsonResponse({"error": "invalid_client"}, status=401)
 
     if request.POST.get("grant_type") == "authorization_code":
         code = request.POST.get("code")
         user = get_auth_code(code)
+        print("[SSO-PROXY] code = ", code)
+        print("[SSO-PROXY] user = ", user)
         if not user or user["exp"] < datetime.utcnow():
             log("Неверный или истекший код", {"code": code})
             return JsonResponse({"error": "invalid_grant"}, status=400)
 
         log("Выдача токена", {"sub": user["sub"], "client_id": client_id})
         id_token = sign_id_token(user["sub"], user["name"], aud=client_id)
+        print("[SSO-PROXY] id_token = ", id_token)
         return JsonResponse({
             "access_token": f"access-token-{user['sub']}",
             "id_token": id_token,
             "token_type": "Bearer",
             "expires_in": 3600
         })
+
 
     elif request.POST.get("grant_type") == "password":
         username = request.POST.get("username")

@@ -4,7 +4,7 @@ from authprovider import views
 
 urlpatterns = [
     path('.well-known/openid-configuration', views.well_known),
-    path('authorize', views.authorize),
+    path('authorize', views.authorize,name="authorize"),
     path('token', views.token),
     path('userinfo', views.userinfo),
     path('jwks', views.jwks)

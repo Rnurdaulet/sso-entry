@@ -6,7 +6,7 @@ from django.conf import settings
 from .nca import verify_ecp_signature
 from .keycloak import create_or_get_user, sign_id_token, is_valid_client
 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from urllib.parse import urlencode
 import secrets
 from datetime import datetime, timedelta
@@ -32,11 +32,12 @@ class ECPLoginView(APIView):
                 "sub": iin,
                 "name": name,
                 "client_id": client_id,
+                "nonce": nonce,
                 "exp": datetime.utcnow() + timedelta(minutes=5)
             })
 
             params = urlencode({"code": code, "state": state})
-            return HttpResponseRedirect(f"{redirect_uri}?{params}")
+            return JsonResponse({"redirect_url": f"{redirect_uri}?{params}"}, status=200)
         except Exception as e:
             return Response({"error": "invalid_signature", "detail": str(e)}, status=400)
 
@@ -69,11 +70,12 @@ class PasswordLoginView(APIView):
                 "sub": username,
                 "name": username,
                 "client_id": client_id,
+                "nonce": request.data.get("nonce"),
                 "exp": datetime.utcnow() + timedelta(minutes=5)
             })
 
             params = urlencode({"code": code, "state": state})
-            return HttpResponseRedirect(f"{redirect_uri}?{params}")
+            return JsonResponse({"redirect_url": f"{redirect_uri}?{params}"}, status=200)
 
         except requests.HTTPError as e:
             return Response({"error": "invalid_credentials", "detail": str(e)}, status=403)

@@ -1,3 +1,4 @@
+import jwt
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlencode
@@ -42,7 +43,7 @@ def authorize(request):
         return HttpResponseBadRequest("Missing required parameters")
 
     # Формируем редирект на фронт
-    spa_url = f"https://sso.odx.kz/?{urlencode(request.GET)}"
+    spa_url = f"{settings.SSO_REDIRECT_SPA}?{urlencode(request.GET)}"
     return redirect(spa_url)
 
 
@@ -70,7 +71,7 @@ def token(request):
             return JsonResponse({"error": "invalid_grant"}, status=400)
 
         log("Выдача токена", {"sub": user["sub"], "client_id": client_id})
-        id_token = sign_id_token(user["sub"], user["name"], aud=client_id)
+        id_token = sign_id_token(user["sub"], user["name"], aud=client_id,    nonce=user.get("nonce"))
         print("[SSO-PROXY] id_token = ", id_token)
         return JsonResponse({
             "access_token": f"access-token-{user['sub']}",
@@ -99,14 +100,13 @@ def token(request):
 
 def userinfo(request):
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    log("Запрос к /userinfo", {"access_token": token})
-
-    if "access-token" in token or "password-token" in token:
-        return JsonResponse({
-            "sub": "010101010101",
-            "name": "ИВАНОВ ИВАН"
-        })
-    return JsonResponse({"error": "invalid_token"}, status=401)
+    try:
+        decoded = jwt.decode(token, options={"verify_signature": False})  # или верифицируй как нужно
+        sub = decoded.get("sub")
+        name = decoded.get("name", "Unknown")
+        return JsonResponse({"sub": sub, "name": name})
+    except Exception as e:
+        return JsonResponse({"error": "invalid_token", "detail": str(e)}, status=401)
 
 def jwks(request):
     log("Запрос на /jwks")

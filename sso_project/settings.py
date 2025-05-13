@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-override-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".odx.kz"]
+ALLOWED_HOSTS = ["*","127.0.0.1", "localhost", ".odx.kz"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -66,24 +66,34 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS
 CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5500",
     "https://sso.odx.kz",
-    "https://spa.odx.kz",
+]
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
 ]
 
 # SSO-прокси настройки
 PRIVATE_KEY_PATH = os.path.join(BASE_DIR, 'rsa-private.pem')
 
-KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "https://kc.odx.kz")
+KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://localhost:8080")
 KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "orleu")
 KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "admin-api")
-KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET", "supersecret")
+KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET", "8A945kWYe2DbJBQ2MyZgHKTeofJx93WM")
 KEYCLOAK_ADMIN_CLIENT_ID = os.getenv("KEYCLOAK_ADMIN_CLIENT_ID", "admin-api")
-KEYCLOAK_ADMIN_SECRET = os.getenv("KEYCLOAK_ADMIN_SECRET", "supersecret")
+KEYCLOAK_ADMIN_SECRET = os.getenv("KEYCLOAK_ADMIN_SECRET", "8A945kWYe2DbJBQ2MyZgHKTeofJx93WM")
 
-OIDC_ISSUER = os.getenv("OIDC_ISSUER", "http://127.0.0.1:8000/")
+OIDC_ISSUER = os.getenv("OIDC_ISSUER", "http://192.168.0.117:8000")
 
 AUTH_CODE_REDIS_DB = 1  # или 0, если основной
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
+SSO_REDIRECT_SPA = os.getenv("SSO_REDIRECT_SPA", "http://127.0.0.1:5500/sso-spa/")
+
+ALLOW_CREATE_USERS = True  # или False — для прода или теста
+ORLEU_EXTERNAL_API = "https://api.orleu-edu.kz/getiinwithroles"
+ORLEU_EXTERNAL_TOKEN = "Bearer eyJ..."  # или в env

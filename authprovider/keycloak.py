@@ -17,8 +17,6 @@ def get_admin_token():
 
     response.raise_for_status()
     return response.json()["access_token"]
-
-
 def create_or_get_user(iin, full_name):
     """ Ищет пользователя по username (iin), создаёт если не найден """
     token = get_admin_token()
@@ -56,9 +54,8 @@ def create_or_get_user(iin, full_name):
 
     # Повторный поиск — чтобы вернуть ID
     return create_or_get_user(iin, full_name)
-
-def sign_id_token(sub, name, aud):
-    """ Подписывает id_token по OIDC (RS256) """
+def sign_id_token(sub, name, aud, nonce=None):
+    """ Подписывает id_token по OIDC (RS256) с поддержкой nonce """
     with open(settings.PRIVATE_KEY_PATH, "rb") as f:
         private_key = f.read()
 
@@ -72,22 +69,9 @@ def sign_id_token(sub, name, aud):
         "exp": calendar.timegm((now + timedelta(hours=1)).utctimetuple()),
     }
 
+    if nonce:
+        payload["nonce"] = nonce  # 👈 ключевая строка
+
     return jwt.encode(payload, private_key, algorithm="RS256")
-
-# ALLOWED_ORIGINS = [
-#     "127.0.0.1",
-#     "localhost",
-#     ".odx.kz"
-# ]
-#
-# def is_valid_client(request):
-#     origin = request.headers.get("Origin", "")
-#     if origin.startswith("http://localhost") or origin.startswith("https://localhost"):
-#         return True
-#     for domain in ALLOWED_ORIGINS:
-#         if domain in origin:
-#             return True
-#     return False
-
 def is_valid_client(*args, **kwargs):
     return True

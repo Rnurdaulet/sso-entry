@@ -12,6 +12,7 @@ def save_auth_code(code, data, ttl=300):
     if isinstance(data.get("exp"), datetime):
         data["exp"] = data["exp"].isoformat()
     redis_client.setex(f"auth_code:{code}", ttl, json.dumps(data))
+    print(f"auth_code:{code}")
 
 def get_auth_code(code, delete=True):
     raw = redis_client.get(f"auth_code:{code}")
@@ -22,4 +23,5 @@ def get_auth_code(code, delete=True):
     data = json.loads(raw)
     if "exp" in data:
         data["exp"] = datetime.fromisoformat(data["exp"])
+    print(f"auth_code:{code}")
     return data

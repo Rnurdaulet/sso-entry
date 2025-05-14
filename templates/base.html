@@ -8,7 +8,53 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
-        }
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#6366f1', // indigo-500, from user’s config, vibrant for light mode
+                            dark: '#1e40af', // matches CSS --primary-blue, richer for dark mode
+                        },
+                        accent: {
+                            gold: {
+                                light: '#f4c430', // yellow-400, brighter than CSS --accent-gold
+                                dark: '#d4af37', // matches CSS --accent-gold
+                            },
+                            teal: {
+                                light: '#10b981', // emerald-500, from user’s config, vibrant for light mode
+                                dark: '#2dd4bf', // matches CSS --accent-teal
+                            },
+                        },
+                        base: {
+                            light: '#f8fafc', // matches CSS --base-offwhite
+                            dark: '#e5e7eb', // gray-200, slightly darker for dark mode backgrounds
+                        },
+                        neutral: {
+                            light: '#9ca3af', // gray-400, lighter for light mode text
+                            dark: '#6b7280', // matches CSS --neutral-gray
+                        },
+                    },
+                    boxShadow: {
+                        'input-focus': '0 0 0 3px rgba(30, 64, 175, 0.3)', // matches .input-focus:focus
+                        'btn-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1)', // matches .btn-hover:hover
+                    },
+                    borderRadius: {
+                        'card': '0.9rem', // matches .card-inner
+                        'card-outer': '1rem', // matches .card-border
+                    },
+                    backgroundImage: {
+                        'card-gradient': 'linear-gradient(45deg, #1e40af, #2dd4bf)', // matches .card-border
+                    },
+                    transitionProperty: {
+                        'input': 'border-color, box-shadow', // matches .input-focus
+                        'btn': 'background-color, transform, box-shadow', // matches .btn-hover
+                    },
+                    translate: {
+                        'btn-hover': '-2px', // matches .btn-hover:hover transform
+                    },
+                },
+            }
+        };
     </script>
     {% block head_scripts %}{% endblock %}
 </head>
@@ -22,7 +68,7 @@
 {% block content %}{% endblock %}
 
 <script>
-    // темная тема
+    // Темная тема
     const toggleBtn = document.getElementById('themeToggle');
     const htmlEl = document.documentElement;
     const theme = localStorage.getItem("theme");

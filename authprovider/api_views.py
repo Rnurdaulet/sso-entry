@@ -5,9 +5,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 from .nca import verify_ecp_signature
-from .keycloak import create_or_get_user, sign_id_token, is_valid_client
+from authprovider.keycloak import create_or_get_user
+from views import is_valid_client
 
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import JsonResponse
 from urllib.parse import urlencode
 import secrets
 from datetime import datetime, timedelta

@@ -99,7 +99,7 @@ KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET", "6V9fRPpROX5Xuw51dD
 KEYCLOAK_ADMIN_CLIENT_ID = os.getenv("KEYCLOAK_ADMIN_CLIENT_ID", "sso-proxy")
 KEYCLOAK_ADMIN_SECRET = os.getenv("KEYCLOAK_ADMIN_SECRET", "6V9fRPpROX5Xuw51dDB9e5vLeWa7h3N7")
 
-OIDC_ISSUER = os.getenv("OIDC_ISSUER", "http://192.168.0.117:8000")
+OIDC_ISSUER = os.getenv("OIDC_ISSUER", "http://192.168.68.114:8000")
 
 AUTH_CODE_REDIS_DB = 1  # или 0, если основной
 
@@ -109,3 +109,32 @@ SSO_REDIRECT_SPA = os.getenv("SSO_REDIRECT_SPA", "http://127.0.0.1:5500/sso-spa/
 ALLOW_CREATE_USERS = True  # или False — для прода или теста
 ORLEU_API = "https://api.orleu-edu.kz/getiinwithroles"
 ORLEU_API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYXBpQG9ybGV1LWVkdS5reiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFQSVVzZXIiLCJuYmYiOjE3NDU0NzAwMTYsImV4cCI6MTkwMzE1MDAxNiwiaXNzIjoiYXBpLm9ybGV1LWVkdS5reiIsImF1ZCI6Ik9ybGV1Q2xpZW50In0.2_4-YRu99ABkN-FFH3yAc489b_lBeChvG_MsIiKJLJ8"  # или в env
+
+
+ALLOWED_CLIENTS = {
+    "frontend-app": {
+        "secret": "abc123xyz",
+        "redirect_uris": [
+            "http://localhost:3000/callback",
+            "https://sso.odx.kz/callback"
+        ]
+    },
+    "mobile-client": {
+        "secret": None,
+        "redirect_uris": [
+            "com.odx.mobile://callback"
+        ]
+    },
+    "sso-entry": {
+        "secret": "sso-entry",
+        "redirect_uris": [
+            "http://localhost:8080/realms/orleu/broker/sso-entry/endpoint",
+        ]
+    },
+}
+
+
+
+NCANODE_URL = "http://nca.odx.kz/cms/verify"
+NCANODE_BASIC_USER = "admin"
+NCANODE_BASIC_PASS = "Alohomora999@"  # через .env лучше

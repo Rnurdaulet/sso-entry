@@ -1,24 +1,46 @@
 import jwt
-from django.http import JsonResponse, HttpResponseRedirect, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlencode
 from django.conf import settings
 from jwt import InvalidTokenError
-
-from .nca import verify_ecp_signature
-from .keycloak import create_or_get_user, sign_id_token, is_valid_client
-from .auth_code_store import save_auth_code, get_auth_code
+from jwt import encode as jwt_encode
+import calendar
+from .auth_code_store import get_auth_code
 from jwt.utils import base64url_encode
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from datetime import datetime, timedelta
-import secrets
 import json
 
 def log(msg, data=None):
     print(f"[SSO-PROXY] {msg}")
     if data is not None:
         print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def sign_id_token(sub, name, aud, nonce=None):
+    with open(settings.PRIVATE_KEY_PATH, "rb") as f:
+        private_key = f.read()
+
+    now = datetime.utcnow()
+    payload = {
+        "iss": settings.OIDC_ISSUER,
+        "sub": sub,
+        "aud": aud,
+        "name": name,
+        "iat": calendar.timegm(now.utctimetuple()),
+        "exp": calendar.timegm((now + timedelta(hours=1)).utctimetuple()),
+    }
+
+    if nonce:
+        payload["nonce"] = nonce
+
+    return jwt_encode(payload, private_key, algorithm="RS256")
+
+
+def is_valid_client(*args, **kwargs):
+    return True
 
 def well_known(request):
     log("Запрос на /.well-known/openid-configuration")

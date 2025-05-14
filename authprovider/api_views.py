@@ -1,4 +1,5 @@
 import requests
+from keycloak import KeycloakOpenID, KeycloakAuthenticationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,6 +12,7 @@ from urllib.parse import urlencode
 import secrets
 from datetime import datetime, timedelta
 from .auth_code_store import save_auth_code
+
 
 class ECPLoginView(APIView):
     def post(self, request):
@@ -41,6 +43,7 @@ class ECPLoginView(APIView):
         except Exception as e:
             return Response({"error": "invalid_signature", "detail": str(e)}, status=400)
 
+
 class PasswordLoginView(APIView):
     def post(self, request):
         username = request.data.get("username")
@@ -48,39 +51,41 @@ class PasswordLoginView(APIView):
         client_id = request.data.get("client_id")
         redirect_uri = request.data.get("redirect_uri")
         state = request.data.get("state")
+        nonce = request.data.get("nonce")
 
-        if not all([username, password, client_id, redirect_uri, state]):
+
+        if not all([username, password, client_id, redirect_uri, state, nonce]):
             return Response({"error": "missing_parameters"}, status=400)
 
-        token_url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token"
+        keycloak_openid = KeycloakOpenID(
+            server_url=f"{settings.KEYCLOAK_URL}/",
+            realm_name=settings.KEYCLOAK_REALM,
+            client_id=settings.KEYCLOAK_CLIENT_ID,
+            client_secret_key=settings.KEYCLOAK_CLIENT_SECRET,
+        )
 
         try:
-            resp = requests.post(token_url, data={
-                "grant_type": "password",
-                "client_id": client_id,
-                "client_secret": settings.KEYCLOAK_CLIENT_SECRET,
-                "username": username,
-                "password": password
-            })
-            resp.raise_for_status()
-            userinfo = resp.json()
+            token = keycloak_openid.token(username, password)
+            # Можно также получить userinfo при необходимости:
+            # userinfo = keycloak_openid.userinfo(token["access_token"])
 
             code = f"code-{secrets.token_urlsafe(24)}"
             save_auth_code(code, {
                 "sub": username,
                 "name": username,
                 "client_id": client_id,
-                "nonce": request.data.get("nonce"),
+                "nonce": nonce,
                 "exp": datetime.utcnow() + timedelta(minutes=5)
             })
 
             params = urlencode({"code": code, "state": state})
             return JsonResponse({"redirect_url": f"{redirect_uri}?{params}"}, status=200)
 
-        except requests.HTTPError as e:
+        except KeycloakAuthenticationError as e:
             return Response({"error": "invalid_credentials", "detail": str(e)}, status=403)
         except Exception as e:
             return Response({"error": "server_error", "detail": str(e)}, status=500)
+
 
 class ChangePasswordView(APIView):
     def post(self, request):
@@ -146,4 +151,3 @@ class ChangePasswordView(APIView):
 
         except Exception as e:
             return Response({"error": "admin_error", "detail": str(e)}, status=500)
-

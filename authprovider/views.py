@@ -33,7 +33,8 @@ def well_known(request):
         "id_token_signing_alg_values_supported": ["RS256"]
     })
 
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
+
 
 def authorize(request):
     client_id = request.GET.get("client_id")
@@ -44,9 +45,8 @@ def authorize(request):
     if not all([client_id, redirect_uri, state, nonce]):
         return HttpResponseBadRequest("Missing required parameters")
 
-    # Формируем редирект на фронт
-    spa_url = f"{settings.SSO_REDIRECT_SPA}?{urlencode(request.GET)}"
-    return redirect(spa_url)
+    # редиректим на login_view с теми же параметрами
+    return redirect(f"/login/?{urlencode(request.GET)}")
 
 
 @csrf_exempt
@@ -134,3 +134,26 @@ def jwks(request):
         "e": base64url_encode(numbers.e.to_bytes((numbers.e.bit_length() + 7) // 8, "big")).decode(),
     }
     return JsonResponse({"keys": [jwk]})
+
+
+def login_view(request):
+    required_params = ["client_id", "redirect_uri", "state", "nonce"]
+    missing = [param for param in required_params if not request.GET.get(param)]
+
+    if missing:
+        return render(request, "sso/error.html", {
+            "message": "Недостаточно параметров в URL запроса.",
+            "missing": missing,
+        }, status=400)
+
+    return render(request, "sso/login.html", {
+        "client_id": request.GET["client_id"],
+        "redirect_uri": request.GET["redirect_uri"],
+        "state": request.GET["state"],
+        "nonce": request.GET["nonce"],
+    })
+
+def set_password_view(request):
+    return render(request, "sso/set_password.html", {
+        "id_token": request.GET.get("id_token")
+    })

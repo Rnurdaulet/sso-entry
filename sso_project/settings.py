@@ -1,7 +1,12 @@
 from pathlib import Path
 import os
 
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# from dotenv import load_dotenv
+# load_dotenv()
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-override-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
@@ -22,6 +27,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -35,7 +41,7 @@ ROOT_URLCONF = 'sso_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "templates")],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -55,13 +61,19 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
 }
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+
+LANGUAGE_CODE = 'en'
+TIME_ZONE = 'Asia/Aqtobe'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = '/static/'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"  # куда collectstatic будет собирать
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",  # откуда collectstatic будет брать файлы
+]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS
@@ -95,5 +107,5 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
 SSO_REDIRECT_SPA = os.getenv("SSO_REDIRECT_SPA", "http://127.0.0.1:5500/sso-spa/")
 
 ALLOW_CREATE_USERS = True  # или False — для прода или теста
-ORLEU_EXTERNAL_API = "https://api.orleu-edu.kz/getiinwithroles"
-ORLEU_EXTERNAL_TOKEN = "Bearer eyJ..."  # или в env
+ORLEU_API = "https://api.orleu-edu.kz/getiinwithroles"
+ORLEU_API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYXBpQG9ybGV1LWVkdS5reiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFQSVVzZXIiLCJuYmYiOjE3NDU0NzAwMTYsImV4cCI6MTkwMzE1MDAxNiwiaXNzIjoiYXBpLm9ybGV1LWVkdS5reiIsImF1ZCI6Ik9ybGV1Q2xpZW50In0.2_4-YRu99ABkN-FFH3yAc489b_lBeChvG_MsIiKJLJ8"  # или в env

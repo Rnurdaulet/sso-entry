@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}SSO{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    {% block head_scripts %}{% endblock %}
+</head>
+<body class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+<div class="absolute top-4 right-4">
+    <button id="themeToggle"
+            class="text-sm px-4 py-2 rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
+        Тема
+    </button>
+</div>
+{% block content %}{% endblock %}
+
+<script>
+    // темная тема
+    const toggleBtn = document.getElementById('themeToggle');
+    const htmlEl = document.documentElement;
+    const theme = localStorage.getItem("theme");
+
+    if (theme === "dark") {
+        htmlEl.classList.add("dark");
+    } else {
+        htmlEl.classList.remove("dark");
+    }
+
+    toggleBtn.addEventListener("click", () => {
+        htmlEl.classList.toggle("dark");
+        localStorage.setItem("theme", htmlEl.classList.contains("dark") ? "dark" : "light");
+    });
+</script>
+{% block bottom_scripts %}{% endblock %}
+</body>
+</html>

@@ -114,7 +114,7 @@ class ChangePasswordView(APIView):
                 f"{settings.KEYCLOAK_URL}/realms/master/protocol/openid-connect/token",
                 data={
                     "grant_type": "client_credentials",
-                    "client_id": "admin-api",
+                    "client_id": "sso-proxy",
                     "client_secret": settings.KEYCLOAK_ADMIN_SECRET
                 }
             ).json()["access_token"]

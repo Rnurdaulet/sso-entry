@@ -1,61 +1,46 @@
-import requests
-import jwt
-from django.conf import settings
+from keycloak import KeycloakAdmin
+from jwt import encode as jwt_encode
 from datetime import datetime, timedelta
 import calendar
+from django.conf import settings
 
-def get_admin_token():
-    data = {
-        "grant_type": "client_credentials",
-        "client_id": "admin-api",
-        "client_secret": settings.KEYCLOAK_ADMIN_SECRET
-    }
-    response = requests.post(
-        f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token",
-        data=data
+
+def get_keycloak_admin():
+    return KeycloakAdmin(
+        server_url=f"{settings.KEYCLOAK_URL}/",
+        realm_name=settings.KEYCLOAK_REALM,
+        client_id=settings.KEYCLOAK_ADMIN_CLIENT_ID,
+        client_secret_key=settings.KEYCLOAK_ADMIN_SECRET,
+        verify=False  # или False если без HTTPS
     )
 
-    response.raise_for_status()
-    return response.json()["access_token"]
+
 def create_or_get_user(iin, full_name):
-    """ Ищет пользователя по username (iin), создаёт если не найден """
-    token = get_admin_token()
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
+    keycloak_admin = get_keycloak_admin()
 
-    # Поиск
-    resp = requests.get(
-        f"{settings.KEYCLOAK_URL}/admin/realms/{settings.KEYCLOAK_REALM}/users?username={iin}",
-        headers=headers
-    )
-    resp.raise_for_status()
-    users = resp.json()
-
+    users = keycloak_admin.get_users(query={"username": iin})
     if users:
         return users[0]["id"]
 
-    # Создание
-    payload = {
+    first_name = full_name.split()[1] if len(full_name.split()) > 1 else full_name
+    last_name = full_name.split()[0]
+
+    user_data = {
         "username": iin,
         "enabled": True,
-        "attributes": {"iin": [iin]},
-        "firstName": full_name.split()[1],
-        "lastName": full_name.split()[0],
+        "firstName": first_name,
+        "lastName": last_name,
+        "attributes": {"iin": [iin]}
     }
 
-    create_resp = requests.post(
-        f"{settings.KEYCLOAK_URL}/admin/realms/{settings.KEYCLOAK_REALM}/users",
-        headers=headers,
-        json=payload
-    )
-    create_resp.raise_for_status()
+    keycloak_admin.create_user(user_data)
 
-    # Повторный поиск — чтобы вернуть ID
-    return create_or_get_user(iin, full_name)
+    # Получаем ID созданного пользователя
+    users = keycloak_admin.get_users(query={"username": iin})
+    return users[0]["id"] if users else None
+
+
 def sign_id_token(sub, name, aud, nonce=None):
-    """ Подписывает id_token по OIDC (RS256) с поддержкой nonce """
     with open(settings.PRIVATE_KEY_PATH, "rb") as f:
         private_key = f.read()
 
@@ -70,8 +55,10 @@ def sign_id_token(sub, name, aud, nonce=None):
     }
 
     if nonce:
-        payload["nonce"] = nonce  # 👈 ключевая строка
+        payload["nonce"] = nonce
 
-    return jwt.encode(payload, private_key, algorithm="RS256")
+    return jwt_encode(payload, private_key, algorithm="RS256")
+
+
 def is_valid_client(*args, **kwargs):
     return True

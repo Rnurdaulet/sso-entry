@@ -3,6 +3,8 @@ from django.http import JsonResponse, HttpResponseRedirect, HttpResponseBadReque
 from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlencode
 from django.conf import settings
+from jwt import InvalidTokenError
+
 from .nca import verify_ecp_signature
 from .keycloak import create_or_get_user, sign_id_token, is_valid_client
 from .auth_code_store import save_auth_code, get_auth_code
@@ -69,16 +71,17 @@ def token(request):
         if not user or user["exp"] < datetime.utcnow():
             log("Неверный или истекший код", {"code": code})
             return JsonResponse({"error": "invalid_grant"}, status=400)
-
         log("Выдача токена", {"sub": user["sub"], "client_id": client_id})
-        id_token = sign_id_token(user["sub"], user["name"], aud=client_id,    nonce=user.get("nonce"))
+        access_token = sign_id_token(user["sub"], user["name"], aud=client_id)
+        id_token = sign_id_token(user["sub"], user["name"], aud=client_id, nonce=user.get("nonce"))
         print("[SSO-PROXY] id_token = ", id_token)
         return JsonResponse({
-            "access_token": f"access-token-{user['sub']}",
+            "access_token": access_token,
             "id_token": id_token,
-            "token_type": "Bearer",
-            "expires_in": 3600
+            "token_type": "bearer",
+            "expires_in": 300
         })
+
 
 
     elif request.POST.get("grant_type") == "password":
@@ -101,11 +104,19 @@ def token(request):
 def userinfo(request):
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
     try:
-        decoded = jwt.decode(token, options={"verify_signature": False})  # или верифицируй как нужно
-        sub = decoded.get("sub")
-        name = decoded.get("name", "Unknown")
-        return JsonResponse({"sub": sub, "name": name})
-    except Exception as e:
+        decoded = jwt.decode(
+            token,
+            options={"verify_signature": False}  # 🔐 Заменить на verify + public_key в проде
+        )
+
+        return JsonResponse({
+            "sub": decoded.get("sub"),
+            "preferred_username": decoded.get("sub"),  # 👈 обязательно!
+            "email": decoded.get("email", f"{decoded.get('sub')}@example.com"),  # если есть
+            "name": decoded.get("name", "Unknown")
+        })
+
+    except InvalidTokenError as e:
         return JsonResponse({"error": "invalid_token", "detail": str(e)}, status=401)
 
 def jwks(request):

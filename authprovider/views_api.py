@@ -79,7 +79,6 @@ class ECPLoginView(APIView):
             logger.exception("[ecp_login] Ошибка при входе через ЭЦП")
             return Response({"error": "invalid_signature", "detail": str(e)}, status=400)
 
-
 class PasswordLoginView(APIView):
     def post(self, request):
         username = request.data.get("username")
@@ -121,51 +120,6 @@ class PasswordLoginView(APIView):
         except Exception as e:
             logger.exception("[password_login] Внутренняя ошибка")
             return Response({"error": "server_error", "detail": str(e)}, status=500)
-
-class ChangePasswordView(APIView):
-    def post(self, request):
-        client_id = request.data.get("client_id")
-        if not is_valid_client(client_id, None):
-            return Response({"error": "invalid_client"}, status=401)
-
-        username = request.data.get("username")
-        current_password = request.data.get("current_password")
-        new_password = request.data.get("new_password")
-
-        if not all([username, current_password, new_password]):
-            return Response({"error": "missing_parameters"}, status=400)
-
-        try:
-            # Step 1: Проверка текущего пароля
-            token_resp = requests.post(
-                f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token",
-                data={
-                    "grant_type": "password",
-                    "client_id": settings.KEYCLOAK_CLIENT_ID,
-                    "client_secret": settings.KEYCLOAK_CLIENT_SECRET,
-                    "username": username,
-                    "password": current_password
-                },
-                timeout=5
-            )
-            token_resp.raise_for_status()
-            logger.info(f"[password_change] Текущий пароль подтверждён: {username}")
-        except requests.RequestException:
-            return Response({"error": "invalid_credentials"}, status=403)
-
-        try:
-            # Step 2: Смена пароля
-            kc = get_keycloak_admin()
-            users = kc.get_users(query={"username": username})
-            if not users:
-                return Response({"error": "user_not_found"}, status=404)
-
-            kc.set_user_password(users[0]["id"], new_password, temporary=False)
-            logger.info(f"[password_change] Пароль успешно обновлён: {username}")
-            return Response({"status": "password_changed"})
-        except Exception as e:
-            logger.exception("[password_change] Ошибка при смене пароля")
-            return Response({"error": "admin_error", "detail": str(e)}, status=500)
 
 class SetPasswordView(APIView):
     def post(self, request):

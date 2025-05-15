@@ -167,7 +167,6 @@ def login_view(request):
         "nonce": request.GET["nonce"],
     })
 
-
 def set_password_view(request):
     return render(request, "sso/set_password.html", {
         "id_token": request.GET.get("id_token")

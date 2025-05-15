@@ -19,7 +19,6 @@ urlpatterns = [
     # API endpoints (ECP / password login / password change)
     path("api/login/ecp", views_api.ECPLoginView.as_view(), name="login_ecp"),
     path("api/login/password", views_api.PasswordLoginView.as_view(), name="login_password"),
-    path("api/password/change", views_api.ChangePasswordView.as_view(), name="change_password"),
     path("api/password/set", SetPasswordView.as_view(), name="set_password_api"),
     path("api/password/forgot", ForgotPasswordView.as_view(), name="forgot_password_api"),
 ]

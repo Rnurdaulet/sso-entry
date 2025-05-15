@@ -172,14 +172,25 @@ def set_password_view(request):
         "id_token": request.GET.get("id_token")
     })
 
+
 def forgot_password_view(request):
     client_id = request.GET.get("client_id")
     redirect_uri = request.GET.get("redirect_uri")
     state = request.GET.get("state")
 
     if not all([client_id, redirect_uri, state]):
+        logger.warning("[forgot_password_view] Не хватает параметров")
         return HttpResponseBadRequest("Missing required parameters")
 
+    if not is_valid_client(client_id):
+        logger.warning(f"[forgot_password_view] Неверный client_id: {client_id}")
+        return HttpResponseBadRequest("Invalid client_id")
+
+    if not is_valid_redirect_uri(client_id, redirect_uri):
+        logger.warning(f"[forgot_password_view] Запрещённый redirect_uri: {redirect_uri}")
+        return HttpResponseBadRequest("Invalid redirect_uri")
+
+    logger.info(f"[forgot_password_view] Рендерим форму для {client_id}")
     return render(request, "sso/forgot_password.html", {
         "client_id": client_id,
         "redirect_uri": redirect_uri,

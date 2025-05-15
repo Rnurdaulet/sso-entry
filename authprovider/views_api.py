@@ -14,7 +14,7 @@ from keycloak.exceptions import KeycloakAuthenticationError, KeycloakGetError
 from .serializers import PasswordLoginSerializer, ECPLoginSerializer, SetPasswordSerializer
 from .keycloak.client import get_keycloak_openid, get_keycloak_admin
 from .keycloak.users import create_or_get_user, check_password_exists
-from .utils.jwt_utils import sign_id_token
+from .utils.jwt_utils import sign_id_token, verify_id_token
 from authprovider.nca import verify_ecp_signature
 from authprovider.utils.auth_code_store import save_auth_code
 
@@ -122,7 +122,7 @@ class SetPasswordView(APIView):
 
         try:
             # ⚠️ WARNING: на проде подпись обязательно проверять!
-            payload = jwt_decode(data["id_token"], options={"verify_signature": False})
+            payload = verify_id_token(data["id_token"])
             client_id = payload.get("aud")
             redirect_uri = payload.get("redirect_uri")
             state = payload.get("state")

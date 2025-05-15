@@ -172,3 +172,17 @@ def set_password_view(request):
     return render(request, "sso/set_password.html", {
         "id_token": request.GET.get("id_token")
     })
+
+def forgot_password_view(request):
+    client_id = request.GET.get("client_id")
+    redirect_uri = request.GET.get("redirect_uri")
+    state = request.GET.get("state")
+
+    if not all([client_id, redirect_uri, state]):
+        return HttpResponseBadRequest("Missing required parameters")
+
+    return render(request, "sso/forgot_password.html", {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "state": state,
+    })

@@ -104,3 +104,15 @@ def create_or_get_user(iin: str, full_name: str) -> str | None:
         assign_roles(user_id, roles, kc)
 
     return user_id
+
+def check_password_exists(username: str) -> bool:
+    kc = get_keycloak_admin()
+    users = kc.get_users(query={"username": username})
+    if not users:
+        return False
+
+    creds = kc.get_credentials(users[0]["id"])
+    for cred in creds:
+        if cred.get("type") == "password":
+            return True
+    return False

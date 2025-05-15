@@ -4,128 +4,149 @@
 
 {% block head_scripts %}
 
-<style>
-  /* Vibrant professional theme for educational platform */
-  :root {
-    --primary-blue: #1e40af; /* Rich blue for primary elements */
-    --accent-gold: #d4af37; /* Warm gold for highlights */
-    --accent-teal: #2dd4bf; /* Vibrant teal for secondary accents */
-    --base-offwhite: #f8fafc; /* Soft off-white for card background */
-    --neutral-gray: #6b7280; /* Soft gray for text */
-  }
-  .input-focus {
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  }
-  .input-focus:focus {
-    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
-  }
-  .btn-hover {
-    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  }
-  .btn-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-  .card-border {
-    background: linear-gradient(45deg, var(--primary-blue), var(--accent-teal));
-    padding: 2px;
-    border-radius: 1rem;
-  }
-  .card-inner {
-    background: var(--base-offwhite);
-    border-radius: 0.9rem;
-  }
-</style>
+    <style>
+        /* Vibrant professional theme for educational platform */
+        :root {
+            --primary-blue: #1e40af; /* Rich blue for primary elements */
+            --accent-gold: #d4af37; /* Warm gold for highlights */
+            --accent-teal: #2dd4bf; /* Vibrant teal for secondary accents */
+            --base-offwhite: #f8fafc; /* Soft off-white for card background */
+            --neutral-gray: #6b7280; /* Soft gray for text */
+        }
+
+        .input-focus {
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .input-focus:focus {
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-hover {
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-border {
+            background: linear-gradient(45deg, var(--primary-blue), var(--accent-teal));
+            padding: 2px;
+            border-radius: 1rem;
+        }
+
+        .card-inner {
+            background: var(--base-offwhite);
+            border-radius: 0.9rem;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-blue-100 via-teal-50 to-gray-100 dark:from-gray-900 dark:via-blue-950 dark:to-gray-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-  <div class="max-w-lg w-full card-border">
-    <div class="card-inner dark:bg-gray-800 space-y-6 p-10">
-      <!-- Header with Logo -->
-      <div class="text-center">
-        <img
-          src="https://db.orleu-edu.kz/assets/media/logo-white.png"
-          alt="Orleu Logo"
-          class="mx-auto h-14 w-auto dark:invert-0 invert"
-        >
-        <h2 class="mt-4 text-2xl font-bold text-var-primary-blue dark:text-var-base-offwhite">Вход в систему</h2>
-        <p class="mt-2 text-sm text-var-neutral-gray dark:text-gray-400">
-          Авторизуйтесь с помощью <span class="font-medium text-var-primary-blue dark:text-var-accent-gold">логина и пароля</span> или
-          <span class="font-medium text-var-accent-teal dark:text-var-accent-teal">ЭЦП</span>
-        </p>
-      </div>
+    <div class="min-h-screen bg-gradient-to-br from-blue-100 via-teal-50 to-gray-100 dark:from-gray-900 dark:via-blue-950 dark:to-gray-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div class="max-w-lg w-full card-border">
+            <div class="card-inner dark:bg-gray-800 space-y-6 p-10">
+                <!-- Header with Logo -->
+                <div class="text-center">
+                    <img
+                            src="https://db.orleu-edu.kz/assets/media/logo-white.png"
+                            alt="Orleu Logo"
+                            class="mx-auto h-14 w-auto dark:invert-0 invert"
+                    >
+                    <h2 class="mt-4 text-2xl font-bold text-var-primary-blue dark:text-var-base-offwhite">Вход в
+                        систему</h2>
+                    <p class="mt-2 text-sm text-var-neutral-gray dark:text-gray-400">
+                        Авторизуйтесь с помощью <span
+                            class="font-medium text-var-primary-blue dark:text-var-accent-gold">логина и пароля</span>
+                        или
+                        <span class="font-medium text-var-accent-teal dark:text-var-accent-teal">ЭЦП</span>
+                    </p>
+                </div>
 
-      <!-- Password Login -->
-      <div class="bg-white dark:bg-gray-700 rounded-lg p-6 space-y-5 shadow-sm">
-        <h3 class="text-lg font-semibold text-var-primary-blue dark:text-var-base-offwhite">Логин и пароль</h3>
-        <form class="space-y-4">
-          <div>
-            <label for="username" class="block text-sm font-medium text-var-neutral-gray dark:text-gray-300">ИИН / Логин</label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              autocomplete="username"
-              class="mt-1 block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-var-primary-blue dark:text-var-base-offwhite focus:ring-0 focus:border-var-primary-blue input-focus"
-              required
-            >
-          </div>
-          <div>
-            <label for="password" class="block text-sm font-medium text-var-neutral-gray dark:text-gray-300">Пароль</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              class="mt-1 block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-var-primary-blue dark:text-var-base-offwhite focus:ring-0 focus:border-var-primary-blue input-focus"
-              required
-            >
-          </div>
-          <div>
-            <button
-              id="loginPasswordBtn"
-              type="button"
-              class="w-full bg-var-primary-blue text-white  bg-blue-800 py-2.5 px-4 rounded-md font-medium hover:bg-blue-900 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-var-primary-blue btn-hover"
-            >
-              Войти
-            </button>
-          </div>
-        </form>
-      </div>
+                <!-- Password Login -->
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-6 space-y-5 shadow-sm">
+                    <h3 class="text-lg font-semibold text-var-primary-blue dark:text-var-base-offwhite">Логин и
+                        пароль</h3>
+                    <form class="space-y-4">
+                        <div>
+                            <label for="username"
+                                   class="block text-sm font-medium text-var-neutral-gray dark:text-gray-300">ИИН /
+                                Логин</label>
+                            <input
+                                    id="username"
+                                    name="username"
+                                    type="text"
+                                    autocomplete="username"
+                                    class="mt-1 block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-var-primary-blue dark:text-var-base-offwhite focus:ring-0 focus:border-var-primary-blue input-focus"
+                                    required
+                            >
+                        </div>
+                        <div>
+                            <label for="password"
+                                   class="block text-sm font-medium text-var-neutral-gray dark:text-gray-300">Пароль</label>
+                            <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    autocomplete="current-password"
+                                    class="mt-1 block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-var-primary-blue dark:text-var-base-offwhite focus:ring-0 focus:border-var-primary-blue input-focus"
+                                    required
+                            >
+                        </div>
+                        <div>
+                            <button
+                                    id="loginPasswordBtn"
+                                    type="button"
+                                    class="w-full bg-var-primary-blue text-white  bg-blue-800 py-2.5 px-4 rounded-md font-medium hover:bg-blue-900 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-var-primary-blue btn-hover"
+                            >
+                                Войти
+                            </button>
+                            <a
+                                    id="forgotPasswordLink"
+                                    href="#"
+                                    class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-center sm:text-left"
+                            >
+                                Забыли пароль?
+                            </a>
+                        </div>
+                    </form>
+                </div>
 
-      <!-- ECP Login -->
-      <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow-sm">
-        <h3 class="text-lg font-semibold text-var-primary-blue dark:text-var-base-offwhite mb-4">Вход через ЭЦП</h3>
-        <button
-          id="loginEcpBtn"
-          type="button"
-          class="w-full bg-teal-600  text-white py-2.5 px-4 rounded-md font-medium hover:bg-teal-600 dark:hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-var-accent-teal btn-hover"
-        >
-          Подписать и войти
-        </button>
-      </div>
+                <!-- ECP Login -->
+                <div class="bg-white dark:bg-gray-700 rounded-lg p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-var-primary-blue dark:text-var-base-offwhite mb-4">Вход через
+                        ЭЦП</h3>
+                    <button
+                            id="loginEcpBtn"
+                            type="button"
+                            class="w-full bg-teal-600  text-white py-2.5 px-4 rounded-md font-medium hover:bg-teal-600 dark:hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-var-accent-teal btn-hover"
+                    >
+                        Подписать и войти
+                    </button>
+                </div>
 
-      <!-- Status -->
-      <div id="status" class="text-center text-sm font-medium text-var-neutral-gray dark:text-gray-400"></div>
+                <!-- Status -->
+                <div id="status" class="text-center text-sm font-medium text-var-neutral-gray dark:text-gray-400"></div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-{% csrf_token %}
-<script>
-  window.CSRF_TOKEN = "{{ csrf_token }}";
-</script>
-<script>
-  window.OIDC_PARAMS = {
-    REDIRECT_URI: "{{ redirect_uri|escapejs }}",
-    STATE: "{{ state|escapejs }}",
-    CLIENT_ID: "{{ client_id|escapejs }}",
-    NONCE: "{{ nonce|escapejs }}",
-    BACKEND_PASS_URL: "{% url 'login_password' %}",
-    BACKEND_ECP_URL: "{% url 'login_ecp' %}"
-  };
-</script>
-<script src="{% static 'js/ncalayer-client.js' %}"></script>
-<script src="{% static 'js/login.js' %}"></script>
+    {% csrf_token %}
+    <script>
+        window.CSRF_TOKEN = "{{ csrf_token }}";
+    </script>
+    <script>
+        window.OIDC_PARAMS = {
+            REDIRECT_URI: "{{ redirect_uri|escapejs }}",
+            STATE: "{{ state|escapejs }}",
+            CLIENT_ID: "{{ client_id|escapejs }}",
+            NONCE: "{{ nonce|escapejs }}",
+            BACKEND_PASS_URL: "{% url 'login_password' %}",
+            BACKEND_ECP_URL: "{% url 'login_ecp' %}"
+        };
+    </script>
+    <script src="{% static 'js/ncalayer-client.js' %}"></script>
+    <script src="{% static 'js/login.js' %}"></script>
 {% endblock %}

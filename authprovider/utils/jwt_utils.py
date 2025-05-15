@@ -54,7 +54,13 @@ def _get_kid() -> str:
     return _cached_kid
 
 
-def sign_id_token(sub: str, name: str, aud: str, nonce: str = None) -> str:
+def sign_id_token(
+    sub: str,
+    name: str,
+    aud: str,
+    nonce: str = None,
+    extra: dict | None = None
+) -> str:
     now = datetime.now(timezone.utc)
     now_ts = int(now.timestamp())
 
@@ -66,8 +72,12 @@ def sign_id_token(sub: str, name: str, aud: str, nonce: str = None) -> str:
         "iat": now_ts,
         "exp": now_ts + 300,
     }
+
     if nonce:
         payload["nonce"] = nonce
+
+    if extra:
+        payload.update(extra)
 
     headers = {
         "alg": "RS256",
@@ -87,6 +97,7 @@ def sign_id_token(sub: str, name: str, aud: str, nonce: str = None) -> str:
     except Exception as e:
         logger.error(f"[jwt] Ошибка генерации токена: {e}")
         raise
+
 
 
 def verify_id_token(token: str, expected_aud: str | None = None) -> dict:

@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resp = await fetch(BACKEND_PASS_URL, {
                 method: "POST",
-                headers: {"Content-Type": "application/json","X-CSRFToken": getCSRFToken()},
+                headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()},
                 redirect: "manual",
                 body: JSON.stringify({
                     username,
@@ -121,4 +121,15 @@ document.addEventListener("DOMContentLoaded", () => {
             setStatus("Ошибка подписи: " + err.message, true);
         }
     }
+
+    document.getElementById("forgotPasswordLink").addEventListener("click", () => {
+        const base = "/forgot-password/";
+        const params = new URLSearchParams({
+            client_id: window.OIDC_PARAMS.CLIENT_ID,
+            redirect_uri: window.OIDC_PARAMS.REDIRECT_URI,
+            state: window.OIDC_PARAMS.STATE,
+        });
+
+        window.location.href = `${base}?${params.toString()}`;
+    });
 });

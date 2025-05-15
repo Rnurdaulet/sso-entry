@@ -9,3 +9,4 @@ gunicorn
 django-redis
 redis
 whitenoise
+cachetools

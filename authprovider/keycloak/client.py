@@ -1,43 +1,68 @@
 import logging
-from datetime import datetime, timedelta
-from keycloak import KeycloakAdmin
+from datetime import timedelta
+from keycloak import KeycloakAdmin, KeycloakOpenID
 from django.conf import settings
+from cachetools import TTLCache, cached
+import threading
 
 logger = logging.getLogger(__name__)
 
-_cached_admin = None
-_cached_admin_expiry = None
-_CACHE_TTL = timedelta(minutes=5)
+# ————— Кеши и блокировки —————
+_admin_cache = TTLCache(maxsize=1, ttl=300)  # 5 минут
+_openid_cache = TTLCache(maxsize=1, ttl=300)
+_admin_lock = threading.Lock()
+_openid_lock = threading.Lock()
 
+# ————— Admin-клиент —————
+
+@cached(_admin_cache, lock=_admin_lock)
+def _create_keycloak_admin() -> KeycloakAdmin:
+    logger.info("[keycloak] Создание нового KeycloakAdmin клиента")
+    return KeycloakAdmin(
+        server_url=settings.KEYCLOAK_URL.rstrip("/") + "/",
+        realm_name=settings.KEYCLOAK_REALM,
+        client_id=settings.KEYCLOAK_ADMIN_CLIENT_ID,
+        client_secret_key=settings.KEYCLOAK_ADMIN_SECRET,
+        verify=True,
+    )
 
 def get_keycloak_admin() -> KeycloakAdmin:
-    global _cached_admin, _cached_admin_expiry
-
-    now = datetime.utcnow()
-    if _cached_admin and _cached_admin_expiry and now < _cached_admin_expiry:
-        return _cached_admin
-
     try:
-        logger.info("[keycloak] Создаётся новый KeycloakAdmin")
-        _cached_admin = KeycloakAdmin(
-            server_url=f"{settings.KEYCLOAK_URL}/",
-            realm_name=settings.KEYCLOAK_REALM,
-            client_id=settings.KEYCLOAK_ADMIN_CLIENT_ID,
-            client_secret_key=settings.KEYCLOAK_ADMIN_SECRET,
-            verify=True,
-        )
-        _cached_admin_expiry = now + _CACHE_TTL
-        return _cached_admin
+        return _create_keycloak_admin()
     except Exception as e:
-        logger.warning(f"[keycloak] Ошибка инициализации KeycloakAdmin: {e}")
-        if _cached_admin:
-            logger.warning("[keycloak] Используем устаревший кэш")
-            return _cached_admin
+        logger.error(f"[keycloak] Ошибка при инициализации KeycloakAdmin: {e}")
+        _admin_cache.clear()
         raise
 
 
-def reset_keycloak_admin_cache():
-    global _cached_admin, _cached_admin_expiry
-    _cached_admin = None
-    _cached_admin_expiry = None
-    logger.info("[keycloak] Кэш KeycloakAdmin очищен вручную")
+# ————— OpenID-клиент —————
+
+@cached(_openid_cache, lock=_openid_lock)
+def _create_keycloak_openid() -> KeycloakOpenID:
+    logger.info("[keycloak] Создание нового KeycloakOpenID клиента")
+    return KeycloakOpenID(
+        server_url=settings.KEYCLOAK_URL.rstrip("/") + "/",
+        realm_name=settings.KEYCLOAK_REALM,
+        client_id=settings.KEYCLOAK_CLIENT_ID,
+        client_secret_key=settings.KEYCLOAK_CLIENT_SECRET,
+        verify=True,
+    )
+
+def get_keycloak_openid() -> KeycloakOpenID:
+    try:
+        return _create_keycloak_openid()
+    except Exception as e:
+        logger.error(f"[keycloak] Ошибка при инициализации KeycloakOpenID: {e}")
+        _openid_cache.clear()
+        raise
+
+
+# ————— Ручной сброс кеша (по необходимости) —————
+
+def reset_keycloak_admin_cache() -> None:
+    _admin_cache.clear()
+    logger.info("[keycloak] Кеш KeycloakAdmin очищен вручную")
+
+def reset_keycloak_openid_cache() -> None:
+    _openid_cache.clear()
+    logger.info("[keycloak] Кеш KeycloakOpenID очищен вручную")

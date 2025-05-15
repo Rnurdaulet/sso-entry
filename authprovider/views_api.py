@@ -1,145 +1,134 @@
-import secrets
 import logging
+import secrets
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-import jwt
-import requests
-from django.conf import settings
 from django.http import JsonResponse, HttpResponseRedirect
-from jwt import decode as jwt_decode, InvalidTokenError
-from rest_framework import status
-from rest_framework.response import Response
+import jwt
+from jwt import InvalidTokenError
 from rest_framework.views import APIView
-from keycloak import KeycloakOpenID
-from keycloak.exceptions import KeycloakAuthenticationError
+from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
+from keycloak.exceptions import KeycloakAuthenticationError, KeycloakGetError
 
+from .serializers import PasswordLoginSerializer, ECPLoginSerializer, SetPasswordSerializer
+from .keycloak.client import get_keycloak_openid, get_keycloak_admin
 from .keycloak.users import create_or_get_user, check_password_exists
-from .keycloak.client import get_keycloak_admin
-from .ebdp.orleu import fetch_user_from_orleu
+from .utils.jwt_utils import sign_id_token
 from authprovider.nca import verify_ecp_signature
 from authprovider.utils.auth_code_store import save_auth_code
-from authprovider.utils.client_check import is_valid_client
-from .utils.jwt_utils import sign_id_token
 
 logger = logging.getLogger(__name__)
 
 
-class ECPLoginView(APIView):
-    def post(self, request):
-        signed_data = request.data.get("signed_data")
-        nonce = request.data.get("nonce")
-        client_id = request.data.get("client_id")
-        redirect_uri = request.data.get("redirect_uri")
-        state = request.data.get("state")
+class LoginThrottle(UserRateThrottle):
+    rate = '5/min'
 
-        if not all([signed_data, nonce, client_id, redirect_uri, state]):
-            logger.warning("[ecp_login] Отсутствуют параметры")
-            return Response({"error": "missing_parameters"}, status=400)
+
+def create_auth_code_response(sub: str, name: str, client_id: str, nonce: str, redirect_uri: str, state: str) -> JsonResponse:
+    code = f"code-{secrets.token_urlsafe(24)}"
+    payload = {
+        "sub": sub,
+        "name": name,
+        "client_id": client_id,
+        "nonce": nonce,
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
+    }
+    save_auth_code(code, payload)
+    logger.info(f"[auth_code] Код авторизации создан для {sub}")
+    return JsonResponse({
+        "redirect_url": f"{redirect_uri}?{urlencode({'code': code, 'state': state})}"
+    }, status=200)
+
+
+class ECPLoginView(APIView):
+    throttle_classes = [LoginThrottle]
+
+    def post(self, request):
+        serializer = ECPLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         try:
-            iin, name = verify_ecp_signature(signed_data, nonce)
-            logger.info(f"[ecp_login] Подпись подтверждена: {iin} ({name})")
+            iin, name = verify_ecp_signature(data["signed_data"], data["nonce"])
+            logger.info(f"[ecp_login] ЭЦП подтверждена: {iin} ({name})")
 
             user_id = create_or_get_user(iin, name)
             if not user_id:
+                logger.error(f"[ecp_login] Ошибка создания пользователя: {iin}")
                 return Response({"error": "user_creation_failed"}, status=500)
 
-            # ➕ Проверка: если пароля нет — редирект на set-password
             if not check_password_exists(iin):
                 id_token = sign_id_token(
                     sub=iin,
                     name=name,
-                    aud=client_id,
-                    nonce=nonce,
-                    extra={
-                        "redirect_uri": redirect_uri,
-                        "state": state
-                    }
+                    aud=data["client_id"],
+                    nonce=data["nonce"],
+                    extra={"redirect_uri": data["redirect_uri"], "state": data["state"]},
                 )
-                logger.info(f"[ecp_login] Пароль отсутствует — редирект на set-password для {iin}")
-                return JsonResponse({
-                    "redirect_url": f"/set-password/?id_token={id_token}"
-                }, status=200)
+                logger.info(f"[ecp_login] Пароль отсутствует — редирект на /set-password для {iin}")
+                return JsonResponse({"redirect_url": f"/set-password/?id_token={id_token}"}, status=200)
 
-            # Всё хорошо — выдаём код авторизации
-            code = f"code-{secrets.token_urlsafe(24)}"
-            save_auth_code(code, {
-                "sub": iin,
-                "name": name,
-                "client_id": client_id,
-                "nonce": nonce,
-                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)
-            })
-
-            params = urlencode({"code": code, "state": state})
-            return JsonResponse({"redirect_url": f"{redirect_uri}?{params}"}, status=200)
+            return create_auth_code_response(
+                sub=iin,
+                name=name,
+                client_id=data["client_id"],
+                nonce=data["nonce"],
+                redirect_uri=data["redirect_uri"],
+                state=data["state"]
+            )
 
         except Exception as e:
-            logger.exception("[ecp_login] Ошибка при входе через ЭЦП")
+            logger.exception(f"[ecp_login] Ошибка авторизации через ЭЦП: {e}")
             return Response({"error": "invalid_signature", "detail": str(e)}, status=400)
 
-class PasswordLoginView(APIView):
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-        client_id = request.data.get("client_id")
-        redirect_uri = request.data.get("redirect_uri")
-        state = request.data.get("state")
-        nonce = request.data.get("nonce")
 
-        if not all([username, password, client_id, redirect_uri, state, nonce]):
-            logger.warning("[password_login] Отсутствуют параметры")
-            return Response({"error": "missing_parameters"}, status=400)
+class PasswordLoginView(APIView):
+    throttle_classes = [LoginThrottle]
+
+    def post(self, request):
+        serializer = PasswordLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         try:
-            keycloak_openid = KeycloakOpenID(
-                server_url=f"{settings.KEYCLOAK_URL}/",
-                realm_name=settings.KEYCLOAK_REALM,
-                client_id=settings.KEYCLOAK_CLIENT_ID,
-                client_secret_key=settings.KEYCLOAK_CLIENT_SECRET,
+            keycloak_openid = get_keycloak_openid()
+            token = keycloak_openid.token(data["username"], data["password"])
+            logger.info(f"[password_login] Успешный вход: {data['username']}")
+
+            return create_auth_code_response(
+                sub=data["username"],
+                name=data["username"],
+                client_id=data["client_id"],
+                nonce=data["nonce"],
+                redirect_uri=data["redirect_uri"],
+                state=data["state"]
             )
-            keycloak_openid.token(username, password)
-            logger.info(f"[password_login] Вход успешен: {username}")
-
-            code = f"code-{secrets.token_urlsafe(24)}"
-            save_auth_code(code, {
-                "sub": username,
-                "name": username,
-                "client_id": client_id,
-                "nonce": nonce,
-                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)
-            })
-
-            params = urlencode({"code": code, "state": state})
-            return JsonResponse({"redirect_url": f"{redirect_uri}?{params}"}, status=200)
 
         except KeycloakAuthenticationError as e:
-            logger.warning(f"[password_login] Неверный логин или пароль: {username}")
+            logger.warning(f"[password_login] Неверные учётные данные: {data['username']}")
             return Response({"error": "invalid_credentials", "detail": str(e)}, status=403)
+
         except Exception as e:
-            logger.exception("[password_login] Внутренняя ошибка")
+            logger.exception(f"[password_login] Внутренняя ошибка при входе: {e}")
             return Response({"error": "server_error", "detail": str(e)}, status=500)
+
 
 class SetPasswordView(APIView):
     def post(self, request):
-        username = request.data.get("username")
-        new_password = request.data.get("new_password")
-        id_token = request.data.get("id_token")
-
-        if not all([username, new_password, id_token]):
-            return Response({"error": "missing_parameters"}, status=400)
-
-        if len(new_password) < 6:
-            return Response({"error": "password_too_short"}, status=400)
+        serializer = SetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         try:
-            payload = jwt_decode(id_token, options={"verify_signature": False})
+            # ⚠️ WARNING: на проде подпись обязательно проверять!
+            payload = jwt_decode(data["id_token"], options={"verify_signature": False})
             client_id = payload.get("aud")
             redirect_uri = payload.get("redirect_uri")
             state = payload.get("state")
             nonce = payload.get("nonce")
-            name = payload.get("name", username)
+            name = payload.get("name", data["username"])
+            reset_password = payload.get("reset_password", False)
 
             if not all([client_id, redirect_uri, state]):
                 return Response({"error": "invalid_token_payload"}, status=400)
@@ -148,47 +137,37 @@ class SetPasswordView(APIView):
             logger.warning(f"[set_password] Невалидный id_token: {e}")
             return Response({"error": "invalid_token"}, status=400)
 
-        # if not is_valid_client(client_id, settings.KEYCLOAK_CLIENT_SECRET):
-        #     return Response({"error": "invalid_client"}, status=401)
-
         try:
             kc = get_keycloak_admin()
-            users = kc.get_users(query={"username": username})
+            users = kc.get_users(query={"username": data["username"]})
             if not users:
                 return Response({"error": "user_not_found"}, status=404)
 
             user_id = users[0]["id"]
-
-            # Проверка: уже есть пароль — нельзя установить второй
             credentials = kc.get_credentials(user_id)
             has_password = any(c["type"] == "password" for c in credentials)
-
-            reset_password = payload.get("reset_password", False)
 
             if has_password and not reset_password:
                 return Response({"error": "password_already_exists"}, status=400)
 
-            kc.set_user_password(user_id, new_password, temporary=False)
-            logger.info(f"[set_password] Пароль установлен: {username}")
+            kc.set_user_password(user_id, data["new_password"], temporary=False)
+            logger.info(f"[set_password] Пароль успешно установлен: {data['username']}")
 
-            # 🎁 Генерируем auth_code и редиректим
-            code = f"code-{secrets.token_urlsafe(24)}"
-            save_auth_code(code, {
-                "sub": username,
-                "name": name,
-                "client_id": client_id,
-                "nonce": nonce,
-                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)
-            })
+            return create_auth_code_response(
+                sub=data["username"],
+                name=name,
+                client_id=client_id,
+                nonce=nonce,
+                redirect_uri=redirect_uri,
+                state=state
+            )
 
-            params = urlencode({"code": code, "state": state})
-            return JsonResponse({
-                "status": "password_set",
-                "redirect_url": f"{redirect_uri}?{params}"
-            })
+        except KeycloakGetError as e:
+            logger.warning(f"[set_password] Keycloak отказал: {e}")
+            return Response({"error": "keycloak_error", "detail": str(e)}, status=502)
 
         except Exception as e:
-            logger.exception("[set_password] Ошибка установки пароля")
+            logger.exception("[set_password] Ошибка при установке пароля")
             return Response({"error": "admin_error", "detail": str(e)}, status=500)
 
 class ForgotPasswordView(APIView):

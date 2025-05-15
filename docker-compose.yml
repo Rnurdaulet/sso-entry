@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   sso-proxy:
     build: .
@@ -10,7 +8,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.janaadamdar.rule=Host(`sso-entry.odx.kz`)"
+      - "traefik.http.routers.janaadamdar.rule=Host(`sso.odx.kz`)"
       - "traefik.http.routers.janaadamdar.entrypoints=websecure"
       - "traefik.http.routers.janaadamdar.tls.certresolver=myresolver"
       - "traefik.http.services.janaadamdar.loadbalancer.server.port=8000"

@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
             setStatus("Сетевая ошибка: " + err.message, true);
         }
     }
-
+    console.log(window.location.href)
     async function loginWithEcp() {
         const client = new NCALayerClient();
         setStatus("Подключение к NCALayer...");
@@ -121,12 +121,13 @@ document.addEventListener("DOMContentLoaded", () => {
             setStatus("Ошибка подписи: " + err.message, true);
         }
     }
+    console.log(window.location.href)
 
     document.getElementById("forgotPasswordLink").addEventListener("click", () => {
         const base = "/forgot-password/";
         const params = new URLSearchParams({
             client_id: window.OIDC_PARAMS.CLIENT_ID,
-            redirect_uri: window.OIDC_PARAMS.REDIRECT_URI,
+            redirect_uri: window.location.href,
             state: window.OIDC_PARAMS.STATE,
         });
 

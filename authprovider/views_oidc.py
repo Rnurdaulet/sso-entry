@@ -14,7 +14,9 @@ from .utils.client_check import is_valid_client, get_client_config, is_valid_red
 from .utils.auth_code_store import get_auth_code, is_auth_code_used, mark_auth_code_as_used
 
 logger = logging.getLogger(__name__)
-
+from django.shortcuts import render
+from django.http import HttpResponseBadRequest
+import secrets
 
 def well_known(request):
     issuer = request.build_absolute_uri("/").rstrip("/")
@@ -172,7 +174,6 @@ def set_password_view(request):
         "id_token": request.GET.get("id_token")
     })
 
-
 def forgot_password_view(request):
     client_id = request.GET.get("client_id")
     redirect_uri = request.GET.get("redirect_uri")
@@ -182,17 +183,45 @@ def forgot_password_view(request):
         logger.warning("[forgot_password_view] Не хватает параметров")
         return HttpResponseBadRequest("Missing required parameters")
 
-    if not is_valid_client(client_id):
-        logger.warning(f"[forgot_password_view] Неверный client_id: {client_id}")
-        return HttpResponseBadRequest("Invalid client_id")
+    # if not is_valid_client(client_id):
+    #     logger.warning(f"[forgot_password_view] Неверный client_id: {client_id}")
+    #     return HttpResponseBadRequest("Invalid client_id")
+    #
+    # if not is_valid_redirect_uri(client_id, redirect_uri):
+    #     logger.warning(f"[forgot_password_view] Запрещённый redirect_uri: {redirect_uri}")
+    #     return HttpResponseBadRequest("Invalid redirect_uri")
 
-    if not is_valid_redirect_uri(client_id, redirect_uri):
-        logger.warning(f"[forgot_password_view] Запрещённый redirect_uri: {redirect_uri}")
-        return HttpResponseBadRequest("Invalid redirect_uri")
+    nonce = secrets.token_urlsafe(16)
 
     logger.info(f"[forgot_password_view] Рендерим форму для {client_id}")
     return render(request, "sso/forgot_password.html", {
         "client_id": client_id,
         "redirect_uri": redirect_uri,
         "state": state,
+        "nonce": nonce,
     })
+
+def forgot_password_form_view(request):
+    id_token = request.GET.get("id_token")
+
+    if not id_token:
+        return HttpResponseBadRequest("Missing id_token")
+
+    try:
+        payload = verify_id_token(id_token)
+        context = {
+            "id_token": id_token,
+            "sub": payload.get("sub"),
+            "name": payload.get("name", ""),
+            "client_id": payload.get("aud"),
+            "redirect_uri": payload.get("redirect_uri"),
+            "state": payload.get("state"),
+        }
+        return render(request, "sso/forgot_password_form.html", context)
+
+    except InvalidTokenError as e:
+        logger.warning(f"[forgot_password_form_view] Invalid token: {e}")
+        return HttpResponseBadRequest("Invalid or expired token")
+    except Exception as e:
+        logger.exception("[forgot_password_form_view] Unexpected error")
+        return HttpResponseBadRequest("Token verification error")

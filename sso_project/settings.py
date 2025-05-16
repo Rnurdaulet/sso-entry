@@ -144,6 +144,7 @@ ALLOWED_CLIENTS = {
         "secret": "sso-entry",
         "redirect_uris": [
             "http://localhost:8080/realms/orleu/broker/sso-entry/endpoint",
+            "https://so.odx.kz/realms/orleu/broker/sso-entry/endpoint"
         ]
     },
     "sso": {

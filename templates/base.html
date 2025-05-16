@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>{% block title %}SSO{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -11,79 +13,122 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: {
-                            light: '#6366f1', // indigo-500, from user’s config, vibrant for light mode
-                            dark: '#1e40af', // matches CSS --primary-blue, richer for dark mode
-                        },
-                        accent: {
-                            gold: {
-                                light: '#f4c430', // yellow-400, brighter than CSS --accent-gold
-                                dark: '#d4af37', // matches CSS --accent-gold
-                            },
-                            teal: {
-                                light: '#10b981', // emerald-500, from user’s config, vibrant for light mode
-                                dark: '#2dd4bf', // matches CSS --accent-teal
-                            },
-                        },
-                        base: {
-                            light: '#f8fafc', // matches CSS --base-offwhite
-                            dark: '#e5e7eb', // gray-200, slightly darker for dark mode backgrounds
-                        },
-                        neutral: {
-                            light: '#9ca3af', // gray-400, lighter for light mode text
-                            dark: '#6b7280', // matches CSS --neutral-gray
-                        },
+                        primary: { DEFAULT: '#1e40af', light: '#6366f1' },
+                        accent: { gold: '#d4af37', teal: '#2dd4bf' },
+                        base: { DEFAULT: '#f8fafc', dark: '#e5e7eb' },
+                        neutral: { DEFAULT: '#6b7280' }
                     },
                     boxShadow: {
-                        'input-focus': '0 0 0 3px rgba(30, 64, 175, 0.3)', // matches .input-focus:focus
-                        'btn-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1)', // matches .btn-hover:hover
+                        input: '0 0 0 3px rgba(30, 64, 175, 0.3)',
+                        button: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     },
                     borderRadius: {
-                        'card': '0.9rem', // matches .card-inner
-                        'card-outer': '1rem', // matches .card-border
+                        card: '0.9rem',
+                        outer: '1rem'
                     },
                     backgroundImage: {
-                        'card-gradient': 'linear-gradient(45deg, #1e40af, #2dd4bf)', // matches .card-border
+                        'card-gradient': 'linear-gradient(45deg, #1e40af, #2dd4bf)'
                     },
                     transitionProperty: {
-                        'input': 'border-color, box-shadow', // matches .input-focus
-                        'btn': 'background-color, transform, box-shadow', // matches .btn-hover
-                    },
-                    translate: {
-                        'btn-hover': '-2px', // matches .btn-hover:hover transform
-                    },
-                },
+                        input: 'border-color, box-shadow',
+                        button: 'background-color, transform, box-shadow'
+                    }
+                }
             }
         };
     </script>
+
+    <style>
+        :root {
+            --primary-blue: #1e40af;
+            --accent-gold: #d4af37;
+            --accent-teal: #2dd4bf;
+            --base-offwhite: #f8fafc;
+            --neutral-gray: #6b7280;
+        }
+
+        .input-focus {
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .input-focus:focus {
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-hover {
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-border {
+            background: linear-gradient(45deg, var(--primary-blue), var(--accent-teal));
+            padding: 2px;
+            border-radius: 1rem;
+        }
+
+        .card-inner {
+            background: var(--base-offwhite);
+            border-radius: 0.9rem;
+        }
+    </style>
+
     {% block head_scripts %}{% endblock %}
 </head>
 <body class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
-<div class="absolute top-4 right-4">
+
+<!-- Theme toggle button -->
+<div class="absolute top-4 right-4 z-50">
     <button id="themeToggle"
-            class="text-sm px-4 py-2 rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
-        Тема
+            class="p-2 rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+            aria-label="Сменить тему">
+        <!--  Light mode icon -->
+        <svg id="sunIcon" class="w-5 h-5 hidden text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 3v1m0 16v1m8.66-12.34l-.71.71M4.05 19.95l-.71-.71M21 12h-1M4 12H3m16.95 7.95l-.71-.71M4.05 4.05l-.71.71M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+        </svg>
+        <!-- Dark mode icon -->
+        <svg id="moonIcon" class="w-5 h-5 hidden text-gray-600 dark:text-white" xmlns="http://www.w3.org/2000/svg"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 12.79A9 9 0 0111.21 3a7 7 0 100 14A9 9 0 0121 12.79z"/>
+        </svg>
     </button>
 </div>
+
 {% block content %}{% endblock %}
 
+<!-- Dark mode script -->
 <script>
-    // Темная тема
     const toggleBtn = document.getElementById('themeToggle');
     const htmlEl = document.documentElement;
-    const theme = localStorage.getItem("theme");
+    const moonIcon = document.getElementById('moonIcon');
+    const sunIcon = document.getElementById('sunIcon');
 
-    if (theme === "dark") {
-        htmlEl.classList.add("dark");
-    } else {
-        htmlEl.classList.remove("dark");
+    function updateIcon() {
+        const isDark = htmlEl.classList.contains('dark');
+        moonIcon.classList.toggle('hidden', !isDark);
+        sunIcon.classList.toggle('hidden', isDark);
     }
+
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") htmlEl.classList.add("dark");
+    else htmlEl.classList.remove("dark");
+
+    updateIcon();
 
     toggleBtn.addEventListener("click", () => {
         htmlEl.classList.toggle("dark");
-        localStorage.setItem("theme", htmlEl.classList.contains("dark") ? "dark" : "light");
+        const newTheme = htmlEl.classList.contains("dark") ? "dark" : "light";
+        localStorage.setItem("theme", newTheme);
+        updateIcon();
     });
 </script>
+
 {% block bottom_scripts %}{% endblock %}
 </body>
 </html>

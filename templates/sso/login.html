@@ -3,45 +3,8 @@
 {% block title %}Вход в систему{% endblock %}
 
 {% block head_scripts %}
+<meta name="csrf-token" content="{{ csrf_token }}">
 
-    <style>
-        /* Vibrant professional theme for educational platform */
-        :root {
-            --primary-blue: #1e40af; /* Rich blue for primary elements */
-            --accent-gold: #d4af37; /* Warm gold for highlights */
-            --accent-teal: #2dd4bf; /* Vibrant teal for secondary accents */
-            --base-offwhite: #f8fafc; /* Soft off-white for card background */
-            --neutral-gray: #6b7280; /* Soft gray for text */
-        }
-
-        .input-focus {
-            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-
-        .input-focus:focus {
-            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
-        }
-
-        .btn-hover {
-            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-
-        .btn-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-border {
-            background: linear-gradient(45deg, var(--primary-blue), var(--accent-teal));
-            padding: 2px;
-            border-radius: 1rem;
-        }
-
-        .card-inner {
-            background: var(--base-offwhite);
-            border-radius: 0.9rem;
-        }
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -136,8 +99,6 @@
     {% csrf_token %}
     <script>
         window.CSRF_TOKEN = "{{ csrf_token }}";
-    </script>
-    <script>
         window.OIDC_PARAMS = {
             REDIRECT_URI: "{{ redirect_uri|escapejs }}",
             STATE: "{{ state|escapejs }}",

@@ -5,8 +5,8 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-override-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
@@ -35,6 +35,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 ROOT_URLCONF = 'sso_project.urls'
 
@@ -137,6 +144,12 @@ ALLOWED_CLIENTS = {
         "secret": "sso-entry",
         "redirect_uris": [
             "http://localhost:8080/realms/orleu/broker/sso-entry/endpoint",
+        ]
+    },
+    "sso": {
+        "secret": "sso",
+        "redirect_uris": [
+            "https://so.odx.kz/realms/orleu/broker/sso/endpoint",
         ]
     },
 }

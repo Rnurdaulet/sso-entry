@@ -10,3 +10,4 @@ django-redis
 redis
 whitenoise
 cachetools
+python-keycloak
